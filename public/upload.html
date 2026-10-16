@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Library & Ingestion - Smart Study OS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <div class="brand-icon">📚</div>
+            <span>SmartStudy OS</span>
+        </a>
+        <nav aria-label="Main Navigation">
+            <ul>
+                <li><a href="/">Overview</a></li>
+                <li><a href="/dashboard.html">Dashboard</a></li>
+                <li><a href="/upload.html" class="active">Content Library</a></li>
+                <li><a href="/requests.html">Study Planner</a></li>
+                <li><a href="/profile.html">Profile</a></li>
+            </ul>
+        </nav>
+        <div class="user-badge">
+            <div class="avatar">AC</div>
+            <span>Alex Chen</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="notification-banner" class="banner"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Multi-Modal Content Ingestion & Library</h1>
+            <p class="page-desc">Ingest lecture recordings (Whisper audio), syllabi PDFs, slide decks, and notes with automated vector chunking.</p>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h2>Upload Study Material</h2>
+            <form id="upload-form" style="margin-top: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="title">Material Title / Lecture Name</label>
+                        <input type="text" id="title" required placeholder="e.g. Operating Systems: Virtual Memory & Page Tables">
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Academic Domain / Course</label>
+                        <input type="text" id="category" required placeholder="e.g. Computer Science">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="format">Content Format</label>
+                        <select id="format">
+                            <option value="pdf">PDF Document / Syllabus</option>
+                            <option value="audio">Lecture Audio (Whisper Transcription)</option>
+                            <option value="slides">Slide Deck (.pptx / slides)</option>
+                            <option value="notes">Markdown / Lecture Notes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="content_text">Text Content / Syllabus Extract (Optional)</label>
+                        <input type="text" id="content_text" placeholder="Paste text or syllabus summary...">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btn-submit-upload">Process & Ingest Content</button>
+            </form>
+        </div>
+
+        <!-- Ingested Materials List -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Ingested Materials in Library</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="search-materials" placeholder="Filter materials..." style="padding: 0.4rem 0.75rem; width: 220px;">
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="materials-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Domain</th>
+                            <th>Format</th>
+                            <th>Chunks</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="materials-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Smart Study Management System Core Platform &bull; WCAG 2.1 AA Compliant</p>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let allMaterials = [];
+
+        async function loadMaterials() {
+            try {
+                allMaterials = await apiClient.listMaterials();
+                renderMaterialsTable(allMaterials);
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        }
+
+        function renderMaterialsTable(items) {
+            const tbody = document.getElementById("materials-body");
+            if (items.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align: center; color: var(--text-secondary);'>No study materials ingested yet.</td></tr>";
+                return;
+            }
+            tbody.innerHTML = items.map(m => `
+                <tr>
+                    <td><strong>${m.title}</strong></td>
+                    <td>${m.category}</td>
+                    <td><span class="badge badge-info">${m.format.toUpperCase()}</span></td>
+                    <td>${m.chunks_count || 1} chunks</td>
+                    <td><span class="badge badge-success">${m.status || 'PROCESSED'}</span></td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;" onclick="generateFlashcardsForMaterial('${m.id}')">⚡ Flashcards</button>
+                        <button class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem; margin-left: 0.25rem;" onclick="generateQuizForMaterial('${m.id}')">📝 Quiz</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        document.getElementById("upload-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btn-submit-upload");
+            btn.disabled = true;
+            btn.textContent = "Processing Ingestion & Vector Chunking...";
+
+            const payload = {
+                title: document.getElementById("title").value,
+                category: document.getElementById("category").value,
+                format: document.getElementById("format").value,
+                content_text: document.getElementById("content_text").value
+            };
+
+            try {
+                const res = await apiClient.uploadMaterial(payload);
+                showNotification(`Material "${res.title}" successfully ingested! Created ${res.chunks_count} vector chunks.`);
+                document.getElementById("upload-form").reset();
+                loadMaterials();
+            } catch (err) {
+                showNotification(err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Process & Ingest Content";
+            }
+        });
+
+        document.getElementById("search-materials").addEventListener("input", (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allMaterials.filter(m => m.title.toLowerCase().includes(term) || m.category.toLowerCase().includes(term));
+            renderMaterialsTable(filtered);
+        });
+
+        async function generateFlashcardsForMaterial(materialId) {
+            try {
+                const res = await apiClient.generateFlashcards(materialId, 3);
+                showNotification(`Generated ${res.generated_count} active recall flashcards! Ready for review.`);
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        }
+
+        async function generateQuizForMaterial(materialId) {
+            try {
+                const res = await apiClient.generateQuiz(materialId, 3);
+                showNotification(`Adaptive Quiz "${res.title}" generated!`);
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadMaterials);
+    </script>
+</body>
+</html>

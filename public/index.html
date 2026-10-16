@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Study Management System - Core Platform</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <div class="brand-icon">📚</div>
+            <span>SmartStudy OS</span>
+        </a>
+        <nav aria-label="Main Navigation">
+            <ul>
+                <li><a href="/" class="active">Overview</a></li>
+                <li><a href="/dashboard.html">Dashboard</a></li>
+                <li><a href="/upload.html">Content Library</a></li>
+                <li><a href="/requests.html">Study Planner</a></li>
+                <li><a href="/profile.html">Profile</a></li>
+            </ul>
+        </nav>
+        <div class="user-badge">
+            <div class="avatar">AC</div>
+            <span>Alex Chen</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="notification-banner" class="banner"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Welcome to Smart Study Management System</h1>
+            <p class="page-desc">Cloud-native study operating system powered by cognitive science, Spaced Repetition (FSRS), and Active Recall.</p>
+        </div>
+
+        <div class="grid-cards">
+            <div class="card">
+                <div class="card-title">Retention Rate</div>
+                <div class="card-value" id="kpi-retention">--%</div>
+                <div class="card-sub">Longitudinal recall accuracy</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Mastery Level</div>
+                <div class="card-value" id="kpi-mastery">--%</div>
+                <div class="card-sub">Knowledge decay minimized</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Cards Reviewed Today</div>
+                <div class="card-value" id="kpi-cards">0</div>
+                <div class="card-sub">Active retrieval cycles</div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h2>Quick Actions & Core Capabilities</h2>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                <a href="/dashboard.html" class="btn btn-primary">Launch Flashcard Review</a>
+                <a href="/upload.html" class="btn btn-secondary">Upload Study Content (PDF/Audio)</a>
+                <a href="/requests.html" class="btn btn-secondary">Sync Study Calendar</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>System Health & Backend Status</h2>
+            <p id="system-status" style="margin-top: 0.5rem; color: var(--text-secondary);">Connecting to API server...</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Smart Study Management System Core Platform &bull; WCAG 2.1 AA Compliant</p>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const health = await apiClient.checkHealth();
+                document.getElementById("system-status").textContent = `✅ Server Online: ${health.service} (Version 1.0.0)`;
+                
+                const analytics = await apiClient.getAnalytics();
+                document.getElementById("kpi-retention").textContent = `${analytics.retention_rate_pct}%`;
+                document.getElementById("kpi-mastery").textContent = `${analytics.mastery_score_pct}%`;
+                document.getElementById("kpi-cards").textContent = analytics.cards_reviewed_today;
+            } catch (err) {
+                document.getElementById("system-status").textContent = "⚠️ Backend offline or connecting...";
+            }
+        });
+    </script>
+</body>
+</html>
