@@ -9,10 +9,10 @@ steps:
     args: ['push','${_WEB_IMAGE}']
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
-    args: ['run','deploy','pushpa-repo1-api-dev','--image=${_API_IMAGE}','--region=${_REGION}','--platform=managed','${_AUTH}','--ingress=${_INGRESS}','--quiet']
+    args: ['run','deploy','pushpa-repo1-api-dev','--image=${_API_IMAGE}','--region=${_REGION}','--platform=managed','${_AUTH}','--ingress=${_INGRESS}','--port=8080','--set-env-vars=DATABASE_PATH=/tmp/study_platform.db,PORT=8080','--quiet']
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
-    args: ['run','deploy','pushpa-repo1-web-dev','--image=${_WEB_IMAGE}','--region=${_REGION}','--platform=managed','${_AUTH}','--ingress=${_INGRESS}','--quiet']
+    args: ['run','deploy','pushpa-repo1-web-dev','--image=${_WEB_IMAGE}','--region=${_REGION}','--platform=managed','${_AUTH}','--ingress=${_INGRESS}','--port=8080','--quiet']
 images:
   - '${_API_IMAGE}'
   - '${_WEB_IMAGE}'

@@ -1,5 +1,6 @@
 """Database Initialization and Query Helper for Smart Study Management System.
 Supports SQLite out of the box with automatic schema migrations and seed loading.
+Defaults to /tmp/study_platform.db for serverless container & Cloud Run compatibility.
 """
 
 import os
@@ -7,7 +8,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-DB_FILE = os.getenv("DATABASE_PATH", "study_platform.db")
+DB_FILE = os.getenv("DATABASE_PATH", "/tmp/study_platform.db")
 
 
 def get_db_connection() -> sqlite3.Connection:
