@@ -1,0 +1,25 @@
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY . .
+RUN FE_DIR='.'; \
+    for d in . frontend client web ui webapp app; do \
+      if [ -f "$d/package.json" ]; then FE_DIR="$d"; break; fi; \
+    done; \
+    echo ">> Detected frontend directory: $FE_DIR"; \
+    echo "$FE_DIR" > /tmp/fe_dir
+RUN FE_DIR=$(cat /tmp/fe_dir); cd "$FE_DIR"; \
+    if [ -f package-lock.json ]; then \
+      npm ci || npm install --legacy-peer-deps; \
+    elif [ -f package.json ]; then \
+      npm install --legacy-peer-deps; \
+    fi
+RUN IDX=$(find /app -name index.html | grep -E '(dist|build|out)/index.html' | head -1); \
+    [ -z "$IDX" ] && IDX=$(find /app -name index.html 2>/dev/null | head -1); \
+    if [ -z "$IDX" ]; then echo 'ERROR: no index.html in build output'; exit 1; fi; \
+    mkdir -p /site && cp -r "$(dirname "$IDX")"/. /site/
+
+FROM nginx:1.27-alpine
+COPY --from=builder /site /usr/share/nginx/html
+RUN printf 'server { listen 8080; root /usr/share/nginx/html; location / { try_files $uri /index.html; } }' > /etc/nginx/conf.d/default.conf
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]
