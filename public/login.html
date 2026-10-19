@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Smart Study OS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; background: #F1F5F9;">
+    <main style="width: 100%; display: flex; justify-content: center;">
+        <div class="card" style="max-width: 420px; width: 100%; margin: 2rem 1rem;">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="brand-icon" style="margin: 0 auto 0.75rem auto; width: 48px; height: 48px; font-size: 1.5rem;">📚</div>
+                <h1 style="font-size: 1.5rem; font-weight: 800;">Smart Study OS</h1>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Single Sign-On & Academic Authentication</p>
+            </div>
+
+            <div id="notification-banner" class="banner"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Institutional or Student Email</label>
+                    <input type="email" id="email" required placeholder="alex.chen@university.edu" value="alex.chen@university.edu">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 0.75rem;">Sign In with University ID</button>
+                <button type="button" id="btn-google" class="btn btn-secondary" style="width: 100%; margin-bottom: 0.75rem;">Continue with Google SSO</button>
+                <button type="button" id="btn-apple" class="btn btn-secondary" style="width: 100%;">Continue with Apple ID</button>
+            </form>
+
+            <p style="text-align: center; font-size: 0.75rem; color: var(--text-secondary); margin-top: 1.5rem;">
+                FERPA & COPPA Compliant &bull; Role-Based Access Control
+            </p>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            try {
+                const res = await apiClient.login(email, "sso");
+                showNotification(`Authenticated as ${res.user.name} (${res.user.role})! Redirecting...`);
+                setTimeout(() => {
+                    window.location.href = "/dashboard.html";
+                }, 1000);
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        });
+
+        document.getElementById("btn-google").addEventListener("click", async () => {
+            const email = document.getElementById("email").value;
+            const res = await apiClient.login(email, "google");
+            showNotification(`Authenticated with Google!`);
+            setTimeout(() => { window.location.href = "/dashboard.html"; }, 800);
+        });
+
+        document.getElementById("btn-apple").addEventListener("click", async () => {
+            const email = document.getElementById("email").value;
+            const res = await apiClient.login(email, "apple");
+            showNotification(`Authenticated with Apple!`);
+            setTimeout(() => { window.location.href = "/dashboard.html"; }, 800);
+        });
+    </script>
+</body>
+</html>

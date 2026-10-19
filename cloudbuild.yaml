@@ -1,0 +1,28 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build','-f','Dockerfile.api','-t','${_API_IMAGE}','.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build','-f','Dockerfile.web','-t','${_WEB_IMAGE}','.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push','${_API_IMAGE}']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push','${_WEB_IMAGE}']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: ['run','deploy','pushpa-repo1-api-dev','--image=${_API_IMAGE}','--region=${_REGION}','--platform=managed','${_AUTH}','--ingress=${_INGRESS}','--port=8080','--set-env-vars=DATABASE_PATH=/tmp/study_platform.db,PORT=8080','--quiet']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: ['run','deploy','pushpa-repo1-web-dev','--image=${_WEB_IMAGE}','--region=${_REGION}','--platform=managed','${_AUTH}','--ingress=${_INGRESS}','--port=8080','--quiet']
+images:
+  - '${_API_IMAGE}'
+  - '${_WEB_IMAGE}'
+substitutions:
+  _REGION: 'us-central1'
+  _API_IMAGE: 'us-central1-docker.pkg.dev/persistent-genai/ssms-repo/pushpa-repo1-api-dev:latest'
+  _WEB_IMAGE: 'us-central1-docker.pkg.dev/persistent-genai/ssms-repo/pushpa-repo1-web-dev:latest'
+  _AUTH: '--allow-unauthenticated'
+  _INGRESS: 'all'
+options:
+  logging: CLOUD_LOGGING_ONLY
+  substitution_option: 'ALLOW_LOOSE'
+timeout: 1800s

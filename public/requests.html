@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Planner & Schedules - Smart Study OS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <div class="brand-icon">📚</div>
+            <span>SmartStudy OS</span>
+        </a>
+        <nav aria-label="Main Navigation">
+            <ul>
+                <li><a href="/">Overview</a></li>
+                <li><a href="/dashboard.html">Dashboard</a></li>
+                <li><a href="/upload.html">Content Library</a></li>
+                <li><a href="/requests.html" class="active">Study Planner</a></li>
+                <li><a href="/profile.html">Profile</a></li>
+            </ul>
+        </nav>
+        <div class="user-badge">
+            <div class="avatar">AC</div>
+            <span>Alex Chen</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="notification-banner" class="banner"></div>
+
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 class="page-title">Automated Study Schedule & Calendar Sync</h1>
+                <p class="page-desc">Personalized dynamic study workflows balanced according to FSRS review due dates and academic deadlines.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button id="btn-rebalance" class="btn btn-secondary">⚡ Rebalance Schedule</button>
+                <a href="/api/v1/schedule/export-ical" class="btn btn-primary" download="study_schedule.ics">📅 Export iCal (.ics)</a>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h2>Upcoming Scheduled Sessions</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Session Title</th>
+                            <th>Topic</th>
+                            <th>Scheduled Time</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Bi-Directional Calendar Integration</h2>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                Synchronize your review sessions directly with Google Calendar, Microsoft Outlook, or Apple Calendar using the RFC 5545 standard.
+            </p>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <a href="/api/v1/schedule/export-ical" class="btn btn-secondary" style="font-size: 0.85rem;">Subscribe to Google Calendar Feed</a>
+                <a href="/api/v1/schedule/export-ical" class="btn btn-secondary" style="font-size: 0.85rem;">Subscribe to Outlook iCal</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Smart Study Management System Core Platform &bull; WCAG 2.1 AA Compliant</p>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+        async function loadSchedule() {
+            try {
+                const res = await apiClient.getSchedule();
+                const tbody = document.getElementById("schedule-body");
+                if (!res.upcoming_sessions || res.upcoming_sessions.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align: center; color: var(--text-secondary);'>No upcoming study sessions.</td></tr>";
+                    return;
+                }
+                tbody.innerHTML = res.upcoming_sessions.map(s => `
+                    <tr>
+                        <td><strong>${s.title}</strong></td>
+                        <td>${s.topic}</td>
+                        <td>${s.scheduled_time}</td>
+                        <td>${s.duration_minutes} mins</td>
+                        <td><span class="badge badge-success">${s.status}</span></td>
+                    </tr>
+                `).join("");
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        }
+
+        document.getElementById("btn-rebalance").addEventListener("click", async () => {
+            try {
+                await apiClient.rebalanceSchedule();
+                showNotification("Study schedule dynamically rebalanced with FSRS review queue!");
+                loadSchedule();
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", loadSchedule);
+    </script>
+</body>
+</html>

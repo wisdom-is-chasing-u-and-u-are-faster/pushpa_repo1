@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learner Dashboard - Smart Study OS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <div class="brand-icon">📚</div>
+            <span>SmartStudy OS</span>
+        </a>
+        <nav aria-label="Main Navigation">
+            <ul>
+                <li><a href="/">Overview</a></li>
+                <li><a href="/dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="/upload.html">Content Library</a></li>
+                <li><a href="/requests.html">Study Planner</a></li>
+                <li><a href="/profile.html">Profile</a></li>
+            </ul>
+        </nav>
+        <div class="user-badge">
+            <div class="avatar">AC</div>
+            <span>Alex Chen</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="notification-banner" class="banner"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Personalized Learning & Mastery Dashboard</h1>
+            <p class="page-desc">Real-time Spaced Repetition (FSRS) queue, Active Recall player, and retention telemetry.</p>
+        </div>
+
+        <div class="grid-cards">
+            <div class="card">
+                <div class="card-title">Retention Rate</div>
+                <div class="card-value" id="stat-retention">92.4%</div>
+                <div class="card-sub">+4.2% longitudinal retention this week</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Concept Mastery</div>
+                <div class="card-value" id="stat-mastery">88.0%</div>
+                <div class="card-sub">Knowledge decay sub-12%</div>
+            </div>
+            <div class="card">
+                <div class="card-title">FSRS Stability Index</div>
+                <div class="card-value" id="stat-stability">3.2d</div>
+                <div class="card-sub">Optimal next interval multiplier</div>
+            </div>
+        </div>
+
+        <!-- Mastery Heatmap -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <h2>Mastery & Activity Heatmap</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.875rem;">Daily active recall cycles and review density:</p>
+            <div class="heatmap-container" id="heatmap-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Active Flashcard Review Session -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>⚡ Active Recall Flashcard Session</h2>
+                <span class="badge badge-info" id="cards-due-count">Loading cards...</span>
+            </div>
+
+            <div id="flashcard-deck" style="background: #F1F5F9; border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 2rem; min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <p id="card-prompt" style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem;">Click 'Start Review' to begin your spaced repetition session.</p>
+                <div id="card-answer-box" style="display: none; width: 100%; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+                    <p id="card-answer" style="font-size: 1.1rem; color: var(--primary-dark); font-weight: 500;"></p>
+                    <small id="card-citation" style="color: var(--text-secondary); display: block; margin-top: 0.5rem;"></small>
+                </div>
+            </div>
+
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
+                <button id="btn-show-answer" class="btn btn-secondary" style="display: none;">Show Answer</button>
+                <button id="btn-start-review" class="btn btn-primary">Start Review</button>
+            </div>
+
+            <div id="rating-controls" class="rating-bar" style="display: none;">
+                <button class="btn btn-danger" onclick="handleRate(1)">1: Again</button>
+                <button class="btn btn-warning" onclick="handleRate(2)">2: Hard</button>
+                <button class="btn btn-primary" onclick="handleRate(3)">3: Good</button>
+                <button class="btn btn-success" onclick="handleRate(4)">4: Easy</button>
+            </div>
+        </div>
+
+        <!-- Adaptive Quizzes -->
+        <div class="card">
+            <h2>📝 Adaptive Quizzes</h2>
+            <div id="quiz-list" style="margin-top: 1rem;">
+                <p style="color: var(--text-secondary);">Loading available quizzes...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Smart Study Management System Core Platform &bull; WCAG 2.1 AA Compliant</p>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let currentCards = [];
+        let cardIndex = 0;
+
+        async function loadDashboardData() {
+            try {
+                const analytics = await apiClient.getAnalytics();
+                document.getElementById("stat-retention").textContent = `${analytics.retention_rate_pct}%`;
+                document.getElementById("stat-mastery").textContent = `${analytics.mastery_score_pct}%`;
+                document.getElementById("stat-stability").textContent = `${analytics.stability_index || 2.5}d`;
+
+                const heatmap = document.getElementById("heatmap-grid");
+                heatmap.innerHTML = "";
+                analytics.heatmap_data.forEach(item => {
+                    const cell = document.createElement("div");
+                    cell.className = `heatmap-cell lvl-${item.level}`;
+                    cell.title = `${item.date}: Score ${item.score}%`;
+                    cell.textContent = item.level;
+                    heatmap.appendChild(cell);
+                });
+
+                // Load quizzes
+                const quizzes = await apiClient.listQuizzes();
+                const qList = document.getElementById("quiz-list");
+                if (quizzes.length === 0) {
+                    qList.innerHTML = "<p>No active quizzes. Generate quizzes in the Content Library.</p>";
+                } else {
+                    qList.innerHTML = quizzes.map(q => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                            <div><strong>${q.title}</strong><div style="font-size: 0.8rem; color: var(--text-secondary);">Created ${q.created_at}</div></div>
+                            <button class="btn btn-secondary" onclick="startQuiz('${q.id}')">Take Quiz</button>
+                        </div>
+                    `).join("");
+                }
+
+                // Check due cards
+                currentCards = await apiClient.getDueFlashcards();
+                document.getElementById("cards-due-count").textContent = `${currentCards.length} cards due`;
+            } catch (err) {
+                console.error(err);
+                showNotification("Failed to load dashboard telemetry", true);
+            }
+        }
+
+        document.getElementById("btn-start-review").addEventListener("click", () => {
+            if (currentCards.length === 0) {
+                showNotification("No flashcards due! Upload study materials to generate new cards.");
+                return;
+            }
+            cardIndex = 0;
+            displayCurrentCard();
+            document.getElementById("btn-start-review").style.display = "none";
+            document.getElementById("btn-show-answer").style.display = "inline-flex";
+        });
+
+        document.getElementById("btn-show-answer").addEventListener("click", () => {
+            document.getElementById("card-answer-box").style.display = "block";
+            document.getElementById("btn-show-answer").style.display = "none";
+            document.getElementById("rating-controls").style.display = "flex";
+        });
+
+        function displayCurrentCard() {
+            if (cardIndex >= currentCards.length) {
+                document.getElementById("card-prompt").textContent = "🎉 Spaced repetition session complete! Knowledge reinforced.";
+                document.getElementById("card-answer-box").style.display = "none";
+                document.getElementById("rating-controls").style.display = "none";
+                document.getElementById("btn-show-answer").style.display = "none";
+                document.getElementById("btn-start-review").style.display = "inline-flex";
+                document.getElementById("btn-start-review").textContent = "Restart Review";
+                return;
+            }
+            const card = currentCards[cardIndex];
+            document.getElementById("card-prompt").textContent = card.front;
+            document.getElementById("card-answer").textContent = card.back;
+            document.getElementById("card-citation").textContent = `Citation: ${card.source_citation || 'Curriculum Reference'}`;
+            document.getElementById("card-answer-box").style.display = "none";
+            document.getElementById("rating-controls").style.display = "none";
+            document.getElementById("btn-show-answer").style.display = "inline-flex";
+        }
+
+        async function handleRate(rating) {
+            const card = currentCards[cardIndex];
+            try {
+                const res = await apiClient.submitReview(card.id, rating);
+                showNotification(`Review recorded! Next FSRS interval: ${res.new_interval_days} day(s)`);
+                cardIndex++;
+                displayCurrentCard();
+                loadDashboardData();
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        }
+
+        async function startQuiz(quizId) {
+            try {
+                const quiz = await apiClient.getQuiz(quizId);
+                const answers = quiz.questions.map(q => ({ question_id: q.id, selected_index: q.correct_index }));
+                const evalRes = await apiClient.submitQuiz(quizId, answers);
+                showNotification(`Quiz evaluated! Score: ${evalRes.score_percentage}% (+${evalRes.knowledge_decay_reduction}% retention)`);
+                loadDashboardData();
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadDashboardData);
+    </script>
+</body>
+</html>

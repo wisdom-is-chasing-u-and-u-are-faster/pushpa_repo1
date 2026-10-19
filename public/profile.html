@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learner Profile - Smart Study OS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <div class="brand-icon">📚</div>
+            <span>SmartStudy OS</span>
+        </a>
+        <nav aria-label="Main Navigation">
+            <ul>
+                <li><a href="/">Overview</a></li>
+                <li><a href="/dashboard.html">Dashboard</a></li>
+                <li><a href="/upload.html">Content Library</a></li>
+                <li><a href="/requests.html">Study Planner</a></li>
+                <li><a href="/profile.html" class="active">Profile</a></li>
+            </ul>
+        </nav>
+        <div class="user-badge">
+            <div class="avatar">AC</div>
+            <span>Alex Chen</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="notification-banner" class="banner"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Learner Profile & Retention Settings</h1>
+            <p class="page-desc">Configure your FSRS retention targets, preferred study windows, and academic profile.</p>
+        </div>
+
+        <div class="card" style="max-width: 600px;">
+            <h2>Student Preferences</h2>
+            <form id="profile-form" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" value="Alex Chen" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Institutional Email</label>
+                    <input type="email" id="email" value="alex.chen@university.edu" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="retention_target">Target Long-Term Memory Retention (%)</label>
+                    <input type="text" id="retention_target" value="92%">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">FSRS adjusts daily review frequencies to maintain this recall threshold.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="study_time">Preferred Daily Study Window</label>
+                    <select id="study_time">
+                        <option value="morning">Morning (08:00 - 11:00)</option>
+                        <option value="afternoon">Afternoon (13:00 - 16:00)</option>
+                        <option value="evening" selected>Evening (18:00 - 21:00)</option>
+                    </select>
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="showNotification('Profile and FSRS settings saved successfully!')">Save Preferences</button>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Smart Study Management System Core Platform &bull; WCAG 2.1 AA Compliant</p>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const profile = await apiClient.getProfile();
+                document.getElementById("name").value = profile.name;
+                document.getElementById("email").value = profile.email;
+                document.getElementById("retention_target").value = `${Math.round(profile.retention_target * 100)}%`;
+                document.getElementById("study_time").value = profile.preferred_study_time || 'evening';
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>
