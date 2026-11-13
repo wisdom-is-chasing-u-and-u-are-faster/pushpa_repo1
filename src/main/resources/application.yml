@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: persistent-sales-portal
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sales_analytics}
+    username: ${SPRING_DATASOURCE_USERNAME:psalesadmin}
+    password: ${SPRING_DATASOURCE_PASSWORD:Secret_Password_2026}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+snowflake:
+  account: ${SNOWFLAKE_ACCOUNT:persistent_partner.us-east-1}
+  warehouse: ${SNOWFLAKE_WAREHOUSE:SALES_WH}
+  database: ${SNOWFLAKE_DATABASE:SALES_ANALYTICS_DB}
+  schema: ${SNOWFLAKE_SCHEMA:PUBLIC}
+  user: ${SNOWFLAKE_USER:PERSISTENT_SALES_APP}
+  password: ${SNOWFLAKE_PASSWORD:Secret_Snowflake_P@ssw0rd!2026}
+
+azure:
+  storage:
+    account: ${AZURE_STORAGE_ACCOUNT:psalessa}
+    container: ${AZURE_STORAGE_CONTAINER:proposal-documents}
+  vm:
+    hostname: ${HOSTNAME:azure-vm-node-01}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
